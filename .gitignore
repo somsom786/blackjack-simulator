@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Generated simulation data
+blackjack_results.csv
+smoke_results.csv
+*_results.csv
+
+# Local tooling
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
