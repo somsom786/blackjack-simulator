@@ -1,126 +1,58 @@
 # Blackjack Simulator & PnL Lab
 
-A browser-based blackjack table and Monte Carlo simulation toolkit built with
-vanilla JavaScript and Python. The project combines an interactive fake-money
-experience with reproducible PnL analysis, making it possible to explore game
-rules, basic strategy, bankroll variance, and betting-model outcomes without
-connecting to a casino or using real money.
+Play hands with a fake bankroll in the browser, then use a seeded Python simulation to compare how two betting rules perform on the same sequence of rounds.
 
-## Highlights
+![Local blackjack table after three settled hands, with the bankroll and round history visible](docs/media/table.png)
 
-- Interactive blackjack table with a fake `$1,000` starting bankroll
-- Animated dealing, dealer hole-card reveal, chips, and hand transitions
-- Six-deck shoe with dealer standing on soft 17
-- Blackjack pays `3:2`
-- Hit, stand, double, and split support
-- Up to four split hands, double after split, and split-ace handling
-- Context-aware S17 basic-strategy suggestions
-- Session PnL, wins, losses, pushes, blackjacks, and hand history
-- Responsive action controls that remain accessible while playing
-- Python simulation comparing flat betting with a Hi-Lo betting ramp
-- Per-hand CSV export for independent analysis
+## What it does
 
-## Why I Built It
+- The browser table models a six-deck shoe, dealer stands on soft 17, 3:2 blackjack, hits, stands, doubles and splits. A strategy hint explains the current hand, and the session panel records outcomes and bankroll changes.
+- The Python CLI deals each round once and applies flat betting and a Hi-Lo wager ramp to the same outcome. It can export one row per strategy per round with the cards, decisions and bankroll data for independent analysis.
 
-This project explores the difference between short-term outcomes and long-term
-expected value. A single profitable session can look convincing while still
-being statistical noise, so the Python simulator records every hand and makes
-the underlying variance visible.
+The two implementations serve different purposes. [The table](index.html) is a single HTML file with vanilla JavaScript and in-memory session state. [The CLI](blackjack_pnl_sim.py) uses the Python standard library and separates shoe, hand decisions, round settlement and strategy accounting.
 
-The browser application focuses on interaction and rules modeling. The Python
-tool focuses on deterministic experiments, bankroll accounting, and data
-generation. Together they demonstrate frontend state management, domain logic,
-simulation design, reproducibility, and structured data export.
+## Run locally
 
-## Run the Interactive App
+From the repository root, use Python 3.10 or later.
 
-No framework or package installation is required.
-
-```powershell
+```sh
 python -m http.server 8000 --bind 127.0.0.1
 ```
 
-Open:
+Open [the local table](http://127.0.0.1:8000/index.html), choose a chip, deal and play a hand. Use **Stop Session** to disable dealing or **Reset $1k** to clear the session.
 
-```text
-http://127.0.0.1:8000/index.html
-```
+Run the analysis in a separate terminal.
 
-The app is implemented as a self-contained HTML, CSS, and JavaScript project in
-`index.html`.
-
-## Run the PnL Simulation
-
-Python 3.10 or newer is recommended. The simulator uses only the standard
-library.
-
-```powershell
+```sh
 python blackjack_pnl_sim.py --hands 100000 --seed 42 --unit 1 --bankroll 10000 --out blackjack_results.csv
 ```
 
-Useful options:
+## Verification
+
+The local Chromium run selected a $10 chip, settled three hands, confirmed the corresponding history entries, stopped the session and verified that reset restored $1,000 and cleared history. The screenshot shows the browser after the three rounds.
+
+Two CLI runs with Python 3.14, seed 42, 100,000 rounds, one-unit base bets, 75% shoe penetration and a 10,000-unit starting bankroll produced byte-identical CSV files with 200,000 data rows. The same simulated rounds feed both strategies.
+
+| Strategy | Winning rounds | Losing rounds | Pushes | PnL (units) | Maximum drawdown (units) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Flat | 43,236 | 47,919 | 8,845 | −554.00 | 739.50 |
+| Hi-Lo ramp | 43,236 | 47,919 | 8,845 | +1,112.50 | 827.00 |
+
+<details>
+<summary>Terminal output</summary>
 
 ```text
---hands          Number of rounds to simulate
---seed           Random seed for reproducible runs
---unit           Base betting unit
---bankroll       Starting bankroll for each strategy
---penetration    Shoe penetration before reshuffling
---out            CSV output path
---no-csv         Print the summary without writing a CSV
+Blackjack PnL summary
+strategy hands  wins  losses pushes blackjacks win_rate total_pnl roi     avg_pnl max_dd bankroll busted
+-------- ------ ----- ------ ------ ---------- -------- --------- ------- ------- ------ -------- ------
+flat     100000 43236 47919  8845   4594       43.236%  -554.00   -5.540% -0.0055 739.50 9446.00  no
+hilo     100000 43236 47919  8845   4594       43.236%  1112.50   11.125% 0.0111  827.00 11112.50 no
 ```
 
-Each run compares:
+CSV SHA-256 from both runs: `8a464b6f4b6e7855fedda955f3217da782f69e65b15d417a7b4b17519a8b9853`.
 
-- **Flat betting:** one unit per round
-- **Hi-Lo ramp:** one to twelve units based on the true count
+</details>
 
-Both strategies receive the same simulated cards and use the same playing
-strategy, which isolates the effect of bet sizing from random shoe differences.
+## Status and limitations
 
-## CSV Data
-
-The generated dataset includes:
-
-- Round and strategy identifiers
-- Starting and ending bankroll
-- Bet size and round PnL
-- Player and dealer cards
-- Recorded player actions
-- Result and blackjack status
-- Running count, true count, and estimated decks remaining
-
-This makes the output suitable for analysis in Python, Excel, Power BI, or
-other data tools.
-
-## Technical Notes
-
-- **Frontend:** semantic HTML, responsive CSS, and dependency-free JavaScript
-- **Simulation:** deterministic seeded randomness and explicit S17 strategy
-  decision trees
-- **Rules engine:** hard/soft hand evaluation, natural blackjacks, doubling,
-  splitting, dealer resolution, and bankroll settlement
-- **UX:** legal-action states, persistent controls, reduced-motion support, and
-  mobile layouts
-- **Data:** structured CSV output with round-level auditability
-
-## Responsible Use
-
-This is an educational, fake-money project. It does not connect to Stake.com or
-any other gambling service, accept deposits, place real wagers, or claim that a
-strategy guarantees profit. Blackjack outcomes remain volatile, and simulated
-results should not be treated as financial advice.
-
-## Project Structure
-
-```text
-.
-|-- index.html              # Interactive fake-money blackjack app
-|-- blackjack_pnl_sim.py    # CLI simulation and CSV exporter
-`-- README.md
-```
-
-## Author
-
-Built by [somsom786](https://github.com/somsom786).
-
+This is a local educational simulator. Browser sessions reset on reload. The table and CLI implement the rules separately, and the repository has no rules-parity suite. The table above reports a single seeded run and provides no estimate of long-run expected value or uncertainty.
